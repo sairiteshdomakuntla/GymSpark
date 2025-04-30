@@ -102,9 +102,15 @@ exports.deleteMembership = async (req, res) => {
     const membershipId = req.params.id;
     console.log('Attempting to delete membership:', membershipId);
 
-    // First check if there are any active assignments
+    // First check if membership exists
+    const membership = await Membership.findOne({ id: membershipId });
+    if (!membership) {
+      return res.status(404).json({ message: 'Membership not found' });
+    }
+
+    // Check for active assignments
     const activeAssignments = await MembershipAssignment.findOne({
-      membershipId: membershipId,
+      membershipId: membership._id,
       status: 'active'
     });
 
@@ -114,12 +120,7 @@ exports.deleteMembership = async (req, res) => {
       });
     }
 
-    const membership = await Membership.findOne({ id: membershipId });
-    if (!membership) {
-      return res.status(404).json({ message: 'Membership not found' });
-    }
-
-    // First delete related membership assignments
+    // Delete related expired/cancelled assignments first
     await MembershipAssignment.deleteMany({ membershipId: membership._id });
     console.log('Deleted membership assignments for membership:', membershipId);
 

@@ -69,19 +69,21 @@ const MembershipsTable = () => {
     setDeletingMembershipId(id);
     try {
       console.log('Starting delete process for membership:', id);
-      await deleteMembership(id);
+      const deleted = await deleteMembership(id);
       
-      // Update the local state to remove the deleted membership
-      setMemberships(prevMemberships => 
-        prevMemberships.filter(membership => membership.id !== id)
-      );
-      setFilteredMemberships(prevFiltered => 
-        prevFiltered.filter(membership => membership.id !== id)
-      );
-      toast.success('Membership plan deleted successfully');
+      if (deleted) {
+        setMemberships(prevMemberships => 
+          prevMemberships.filter(membership => membership.id !== id)
+        );
+        setFilteredMemberships(prevFiltered => 
+          prevFiltered.filter(membership => membership.id !== id)
+        );
+        toast.success('Membership plan deleted successfully');
+      }
     } catch (error: any) {
       console.error('Error deleting membership:', error);
-      toast.error(error.message || 'Failed to delete membership. It may have active members.');
+      const errorMessage = error.message || 'Failed to delete membership. It may have active members.';
+      toast.error(errorMessage);
     } finally {
       setDeletingMembershipId(null);
     }

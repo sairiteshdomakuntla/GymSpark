@@ -184,17 +184,12 @@ export const deleteMembership = async (id: string): Promise<boolean> => {
       }
     });
 
+    const data = await response.json();
+
     if (!response.ok) {
-      const contentType = response.headers.get("content-type");
-      if (contentType && contentType.indexOf("application/json") !== -1) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to delete membership');
-      } else {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      throw new Error(data.message || 'Failed to delete membership');
     }
 
-    const data = await response.json();
     console.log('Delete response:', data);
     return true;
   } catch (error) {

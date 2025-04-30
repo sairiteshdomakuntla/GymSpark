@@ -1,13 +1,12 @@
 const express = require('express');
+const router = express.Router();
 const { 
   getMemberships, 
   createMembership, 
-  getMembership,
-  updateMembership,
+  getMembership, 
+  updateMembership, 
   deleteMembership 
 } = require('../controllers/membershipController');
-
-const router = express.Router();
 
 router.get('/', getMemberships);
 router.get('/:id', getMembership);
