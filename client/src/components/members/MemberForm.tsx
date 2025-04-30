@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -65,9 +64,9 @@ const MemberForm = () => {
         toast.success('Member added successfully');
       }
       navigate('/members');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving member:', error);
-      toast.error(`Failed to ${isEditMode ? 'update' : 'add'} member`);
+      toast.error(`Failed to ${isEditMode ? 'update' : 'add'} member: ${error.message}`);
     } finally {
       setIsSubmitting(false);
     }
