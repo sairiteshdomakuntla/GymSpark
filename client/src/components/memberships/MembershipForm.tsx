@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -12,7 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { ArrowLeft, Save, Plus, X } from 'lucide-react';
 import { toast } from 'sonner';
 
-type MembershipFormData = Omit<Membership, 'id' | 'createdAt' | 'updatedAt'>;
+type MembershipFormData = Omit<Membership, 'createdAt' | 'updatedAt'>;
 
 const MembershipForm = () => {
   const { id } = useParams<{ id: string }>();
@@ -41,18 +40,20 @@ const MembershipForm = () => {
   const loadMembership = async () => {
     setIsLoading(true);
     try {
-      const membership = await getMembership(id!);
+      if (!id) return;
+      
+      const membership = await getMembership(id);
       if (membership) {
         reset({
+          id: membership.id, // Add this line to include the ID
           name: membership.name,
           description: membership.description,
           price: membership.price,
           durationMonths: membership.durationMonths,
-          features: membership.features,
           discount: membership.discount,
           active: membership.active,
         });
-        setFeatures(membership.features);
+        setFeatures(membership.features || []);
       } else {
         toast.error('Membership plan not found');
         navigate('/memberships');
@@ -66,14 +67,30 @@ const MembershipForm = () => {
   };
 
   const onSubmit = async (data: MembershipFormData) => {
-    data.features = features;
     setIsSubmitting(true);
     try {
       if (isEditMode) {
-        await updateMembership(id!, data);
+        await updateMembership(id!, {
+          name: data.name,
+          description: data.description,
+          price: Number(data.price),
+          durationMonths: Number(data.durationMonths),
+          features: features, // Make sure features are included
+          discount: Number(data.discount),
+          active: data.active
+        });
         toast.success('Membership plan updated successfully');
       } else {
-        await createMembership(data);
+        await createMembership({
+          id: data.id,
+          name: data.name,
+          description: data.description,
+          price: Number(data.price),
+          durationMonths: Number(data.durationMonths),
+          features: features, // Make sure features are included here too
+          discount: Number(data.discount) || 0,
+          active: data.active
+        });
         toast.success('Membership plan added successfully');
       }
       navigate('/memberships');
@@ -121,6 +138,24 @@ const MembershipForm = () => {
       
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Add ID field at the top */}
+          <div className="space-y-2">
+            <Label htmlFor="id">Membership ID</Label>
+            <Input
+              id="id"
+              placeholder="Enter unique membership ID"
+              {...register('id', { 
+                required: 'Membership ID is required',
+                pattern: {
+                  value: /^[A-Za-z0-9-_]+$/,
+                  message: 'ID can only contain letters, numbers, hyphens, and underscores'
+                }
+              })}
+              disabled={isEditMode} // Disable editing ID for existing memberships
+            />
+            {errors.id && <p className="text-red-500 text-sm">{errors.id.message}</p>}
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="name">Plan Name</Label>
             <Input

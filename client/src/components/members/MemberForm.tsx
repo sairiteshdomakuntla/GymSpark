@@ -11,7 +11,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { ArrowLeft, Save } from 'lucide-react';
 import { toast } from 'sonner';
 
-type MemberFormData = Omit<Member, 'id' | 'createdAt' | 'updatedAt'>;
+type MemberFormData = Omit<Member, 'createdAt' | 'updatedAt'>;
 
 const MemberForm = () => {
   const { id } = useParams<{ id: string }>();
@@ -23,23 +23,27 @@ const MemberForm = () => {
   const isEditMode = !!id;
 
   useEffect(() => {
-    if (isEditMode) {
+    if (isEditMode && id) {
       loadMember();
     }
-  }, [id]);
+  }, [isEditMode, id]);
 
   const loadMember = async () => {
     setIsLoading(true);
     try {
-      const member = await getMember(id!);
+      if (!id) return;
+      
+      const member = await getMember(id);
       if (member) {
+        // Reset form with existing member data
         reset({
+          id: member.id,
           name: member.name,
-          age: member.age,
           email: member.email,
-          contactNumber: member.contactNumber,
+          age: member.age,
           gender: member.gender,
-          fitnessGoal: member.fitnessGoal,
+          contactNumber: member.contactNumber || '',
+          fitnessGoal: member.fitnessGoal || ''
         });
       } else {
         toast.error('Member not found');
@@ -56,17 +60,26 @@ const MemberForm = () => {
   const onSubmit = async (data: MemberFormData) => {
     setIsSubmitting(true);
     try {
-      if (isEditMode) {
-        await updateMember(id!, data);
+      if (isEditMode && id) {
+        // Update existing member
+        const updatedMember = await updateMember(id, {
+          name: data.name,
+          email: data.email,
+          age: data.age,
+          gender: data.gender,
+          contactNumber: data.contactNumber,
+          fitnessGoal: data.fitnessGoal
+        });
         toast.success('Member updated successfully');
       } else {
+        // Create new member
         await createMember(data);
         toast.success('Member added successfully');
       }
       navigate('/members');
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error saving member:', error);
-      toast.error(`Failed to ${isEditMode ? 'update' : 'add'} member: ${error.message}`);
+      toast.error(`Failed to ${isEditMode ? 'update' : 'add'} member`);
     } finally {
       setIsSubmitting(false);
     }
@@ -97,6 +110,22 @@ const MemberForm = () => {
       
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <Label htmlFor="id">Member ID</Label>
+            <Input
+              id="id"
+              placeholder="Enter unique member ID"
+              {...register('id', { 
+                required: 'Member ID is required',
+                pattern: {
+                  value: /^[A-Za-z0-9-_]+$/,
+                  message: 'ID can only contain letters, numbers, hyphens and underscores'
+                }
+              })}
+            />
+            {errors.id && <p className="text-red-500 text-sm">{errors.id.message}</p>}
+          </div>
+          
           <div className="space-y-2">
             <Label htmlFor="name">Full Name</Label>
             <Input
@@ -161,7 +190,6 @@ const MemberForm = () => {
             <RadioGroup 
               defaultValue="male" 
               className="flex space-x-4"
-              value={register('gender', { required: 'Gender is required' }).value}
               onValueChange={(value) => setValue('gender', value as 'male' | 'female' | 'other')}
             >
               <div className="flex items-center space-x-2">

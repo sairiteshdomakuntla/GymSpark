@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Membership } from '../../types';
@@ -69,16 +68,20 @@ const MembershipsTable = () => {
   const handleDeleteMembership = async (id: string) => {
     setDeletingMembershipId(id);
     try {
-      const success = await deleteMembership(id);
-      if (success) {
-        setMemberships(prevMemberships => prevMemberships.filter(membership => membership.id !== id));
-        toast.success('Membership plan deleted successfully');
-      } else {
-        toast.error('Failed to delete membership plan');
-      }
-    } catch (error) {
+      console.log('Starting delete process for membership:', id);
+      await deleteMembership(id);
+      
+      // Update the local state to remove the deleted membership
+      setMemberships(prevMemberships => 
+        prevMemberships.filter(membership => membership.id !== id)
+      );
+      setFilteredMemberships(prevFiltered => 
+        prevFiltered.filter(membership => membership.id !== id)
+      );
+      toast.success('Membership plan deleted successfully');
+    } catch (error: any) {
       console.error('Error deleting membership:', error);
-      toast.error('An error occurred while deleting the membership plan');
+      toast.error(error.message || 'Failed to delete membership. It may have active members.');
     } finally {
       setDeletingMembershipId(null);
     }
@@ -167,7 +170,8 @@ const MembershipsTable = () => {
                           <AlertDialogHeader>
                             <AlertDialogTitle>Delete Membership Plan</AlertDialogTitle>
                             <AlertDialogDescription>
-                              Are you sure you want to delete the {membership.name} plan? This action cannot be undone.
+                              Are you sure you want to delete {membership.name}? This action cannot be undone.
+                              Any active memberships will prevent deletion.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>

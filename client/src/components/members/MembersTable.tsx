@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Member } from '../../types';
@@ -52,10 +51,12 @@ const MembersTable = () => {
     }
   }, [searchTerm, members]);
 
+  // Add console log to debug the member data
   const loadMembers = async () => {
     setIsLoading(true);
     try {
       const data = await getMembers();
+      console.log('Loaded members:', data); // Add this to debug
       setMembers(data);
       setFilteredMembers(data);
     } catch (error) {
@@ -69,21 +70,21 @@ const MembersTable = () => {
   const handleDeleteMember = async (id: string) => {
     setDeletingMemberId(id);
     try {
-      const success = await deleteMember(id);
-      if (success) {
+      console.log('Starting delete process for member:', id);
+      const deleted = await deleteMember(id);
+      
+      if (deleted) {
         setMembers(prevMembers => prevMembers.filter(member => member.id !== id));
+        setFilteredMembers(prevFiltered => prevFiltered.filter(member => member.id !== id));
         toast.success('Member deleted successfully');
-      } else {
-        toast.error('Failed to delete member');
       }
     } catch (error) {
       console.error('Error deleting member:', error);
-      toast.error('An error occurred while deleting the member');
+      toast.error(error instanceof Error ? error.message : 'Failed to delete member');
     } finally {
       setDeletingMemberId(null);
     }
   };
-
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -137,7 +138,17 @@ const MembersTable = () => {
                         </Button>
                       </Link>
                       <Link to={`/members/edit/${member.id}`}>
-                        <Button variant="outline" size="icon">
+                        <Button 
+                          variant="outline" 
+                          size="icon"
+                          onClick={(e) => {
+                            if (!member.id) {
+                              e.preventDefault();
+                              toast.error('Invalid member ID');
+                              return;
+                            }
+                          }}
+                        >
                           <Edit className="h-4 w-4" />
                         </Button>
                       </Link>

@@ -1,6 +1,5 @@
-
 export interface Member {
-  id: string;
+  id: string;  // Now required, not optional
   name: string;
   age: number;
   email: string;
@@ -17,7 +16,7 @@ export interface Membership {
   description: string;
   price: number;
   durationMonths: number;
-  features: string[];
+  features: string[];  // Make sure this is required
   discount: number;
   active: boolean;
   createdAt: string;
