@@ -16,6 +16,7 @@ type MembershipFormData = Omit<Membership, 'id' | 'createdAt' | 'updatedAt'>;
 
 const MembershipForm = () => {
   const { id } = useParams<{ id: string }>();
+  console.log("ID issijdisjd",id)
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
