@@ -1,48 +1,38 @@
-
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getMembershipAssignments, getMembers, getMemberships } from '../../services/dataService';
-import { Member, Membership, MembershipAssignment } from '../../types';
+import { getMembershipAssignments } from '../../services/dataService';
+import { MembershipAssignmentWithDetails } from '../../types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
-interface MembershipWithDetails extends MembershipAssignment {
-  memberName: string;
-  planName: string;
-}
-
 const ActiveMembershipsList = () => {
-  const [memberships, setMemberships] = useState<MembershipWithDetails[]>([]);
+  const [memberships, setMemberships] = useState<MembershipAssignmentWithDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const loadMemberships = async () => {
       setIsLoading(true);
       try {
-        const [assignments, members, plans] = await Promise.all([
-          getMembershipAssignments(),
-          getMembers(),
-          getMemberships(),
-        ]);
+        const assignments = await getMembershipAssignments();
+        console.log('Raw assignments:', assignments);
         
-        // Get active memberships and enrich with member and plan details
-        const activeMemberships = assignments
-          .filter(a => a.status === 'active')
-          .map(assignment => {
-            const member = members.find(m => m.id === assignment.memberId);
-            const plan = plans.find(p => p.id === assignment.membershipId);
-            
-            return {
-              ...assignment,
-              memberName: member?.name || 'Unknown',
-              planName: plan?.name || 'Unknown',
-            };
-          })
+        // Filter only active assignments with valid data
+        const validAssignments = assignments.filter(
+          a => a.member && 
+               a.membership && 
+               a.status === 'active' &&
+               new Date(a.endDate) >= new Date() // Only future or current end dates
+        );
+        
+        console.log('Valid assignments:', validAssignments);
+
+        // Sort by start date and take latest 5
+        const sortedAssignments = validAssignments
           .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
           .slice(0, 5);
-        
-        setMemberships(activeMemberships);
+
+        setMemberships(sortedAssignments);
       } catch (error) {
         console.error('Failed to load memberships:', error);
       } finally {
@@ -51,10 +41,14 @@ const ActiveMembershipsList = () => {
     };
 
     loadMemberships();
+
+    // Refresh when new membership is assigned
+    window.addEventListener('membershipAssigned', loadMemberships);
+    return () => window.removeEventListener('membershipAssigned', loadMemberships);
   }, []);
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+  const formatDate = (date: string) => {
+    return new Date(date).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
@@ -65,7 +59,7 @@ const ActiveMembershipsList = () => {
     <Card className="h-full">
       <CardHeader>
         <CardTitle>Active Memberships</CardTitle>
-        <CardDescription>Current active membership plans</CardDescription>
+        <CardDescription>Currently active membership plans</CardDescription>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -74,36 +68,30 @@ const ActiveMembershipsList = () => {
           </div>
         ) : memberships.length > 0 ? (
           <div className="space-y-4">
-            {memberships.map((membership) => (
-              <div key={membership.id} className="flex items-center justify-between">
+            {memberships.map((assignment) => (
+              <div key={assignment.id} className="flex items-center justify-between p-3 border rounded-lg">
                 <div className="flex flex-col">
-                  <span className="font-medium">{membership.memberName}</span>
+                  <span className="font-medium">{assignment.member?.name}</span>
                   <div className="flex items-center mt-1">
-                    <Badge variant="outline" className="bg-green-100 text-green-800 mr-2">
-                      {membership.planName}
+                    <Badge className="bg-green-100 text-green-800 mr-2">
+                      {assignment.membership?.name}
                     </Badge>
                     <span className="text-xs text-gray-500">
-                      Expires: {formatDate(membership.endDate)}
+                      Until: {formatDate(assignment.endDate)}
                     </span>
                   </div>
                 </div>
-                <Link to={`/members/${membership.memberId}`}>
-                  <Button variant="ghost" size="sm">View</Button>
+                <Link to={`/members/${assignment.memberId}`}>
+                  <Button variant="outline" size="sm">View</Button>
                 </Link>
               </div>
             ))}
           </div>
         ) : (
           <div className="text-center py-6">
-            <p className="text-gray-500">No active memberships to display.</p>
+            <p className="text-gray-500">No active memberships found</p>
           </div>
         )}
-        
-        <div className="mt-6">
-          <Link to="/memberships">
-            <Button variant="outline" className="w-full">View All Memberships</Button>
-          </Link>
-        </div>
       </CardContent>
     </Card>
   );

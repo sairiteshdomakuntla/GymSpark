@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { getMember, getMembershipAssignments, getMemberships } from '../../services/dataService';
@@ -28,28 +27,21 @@ const MemberDetail = () => {
     try {
       if (!id) return;
       
-      const memberData = await getMember(id);
+      const [memberData, allMemberships, allAssignments] = await Promise.all([
+        getMember(id),
+        getMemberships(),
+        getMembershipAssignments()
+      ]);
+
       if (!memberData) {
         toast.error('Member not found');
         navigate('/members');
         return;
       }
-      
+
       setMember(memberData);
-      
-      const [allMemberships, allAssignments] = await Promise.all([
-        getMemberships(),
-        getMembershipAssignments()
-      ]);
-      
       setMemberships(allMemberships);
-      
-      // Filter assignments for this member
-      const memberAssignments = allAssignments.filter(
-        assignment => assignment.memberId === id
-      );
-      setMembershipAssignments(memberAssignments);
-      
+      setMembershipAssignments(allAssignments.filter(a => a.memberId === id));
     } catch (error) {
       console.error('Error loading member details:', error);
       toast.error('Failed to load member details');

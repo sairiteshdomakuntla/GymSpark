@@ -199,12 +199,19 @@ export const deleteMembership = async (id: string): Promise<boolean> => {
 };
 
 // Membership assignment services
-export const getMembershipAssignments = async (): Promise<MembershipAssignment[]> => {
-  const response = await fetch(`${API_URL}/membership-assignments`);
-  if (!response.ok) {
-    throw new Error('Failed to fetch membership assignments');
+export const getMembershipAssignments = async (): Promise<MembershipAssignmentWithDetails[]> => {
+  try {
+    const response = await fetch(`${API_URL}/membership-assignments`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch membership assignments');
+    }
+    const data = await response.json();
+    console.log('API Response for assignments:', data);
+    return data;
+  } catch (error) {
+    console.error('Error in getMembershipAssignments:', error);
+    throw error;
   }
-  return response.json();
 };
 
 export const getMembershipAssignment = async (id: string): Promise<MembershipAssignmentWithDetails | undefined> => {
@@ -215,16 +222,32 @@ export const getMembershipAssignment = async (id: string): Promise<MembershipAss
   return response.json();
 };
 
-export const createMembershipAssignment = async (assignmentData: Omit<MembershipAssignment, 'id' | 'createdAt' | 'updatedAt'>): Promise<MembershipAssignment> => {
-  const response = await fetch(`${API_URL}/membership-assignments`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(assignmentData),
-  });
-  if (!response.ok) {
-    throw new Error('Failed to create membership assignment');
+export const createMembershipAssignment = async (
+  assignmentData: Omit<MembershipAssignment, 'id' | 'createdAt' | 'updatedAt'>
+): Promise<MembershipAssignment> => {
+  try {
+    console.log('Creating membership assignment with data:', assignmentData);
+    
+    const response = await fetch(`${API_URL}/membership-assignments`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(assignmentData)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      throw new Error(errorData?.message || 'Failed to create membership assignment');
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error in createMembershipAssignment:', error);
+    throw error;
   }
-  return response.json();
 };
 
 export const updateMembershipAssignment = async (id: string, assignmentData: Partial<Omit<MembershipAssignment, 'id' | 'createdAt' | 'updatedAt'>>): Promise<MembershipAssignment | undefined> => {
