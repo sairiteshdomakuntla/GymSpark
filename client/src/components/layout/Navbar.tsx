@@ -1,4 +1,3 @@
-
 import { Bell, User, LogOut } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -19,14 +18,14 @@ const Navbar = () => {
       <h1 className="text-xl font-semibold text-gray-800 hidden md:block">GymSpark Lite</h1>
       
       <div className="flex items-center space-x-4">
-        <button className="text-gray-500 hover:text-gray-700">
+        {/* <button className="text-gray-500 hover:text-gray-700">
           <Bell size={20} />
-        </button>
+        </button> */}
         
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-              <div className="h-8 w-8 rounded-full bg-gym-purple text-white flex items-center justify-center">
+            <Button variant="ghost" className="relative h-8 w-10 rounded-full">
+              <div className="h-8 w-10 rounded-full bg-gym-purple text-white flex items-center justify-center border-4 border-gym-purple">
                 <User size={16} />
               </div>
             </Button>
